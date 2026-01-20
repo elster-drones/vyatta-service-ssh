@@ -31,13 +31,15 @@ my $config = new Vyatta::Config;
 # OpenSSH limitation
 my $MAX_LISTEN_SOCKS = 16;
 
-# Initalize defaults
+# Initalize defaults (must match YANG schema defaults)
 my $vars = {
     Script              => $0,
     Port                => ["22"],
     Subsystem           => [],
-    ClientAliveInterval => 0,
-    ClientAliveCountMax => 3,
+    LoginGraceTime      => 120,   # YANG: timeout default "120"
+    ClientAliveInterval => 0,     # YANG: client-alive-interval default "0"
+    ClientAliveCountMax => 3,     # YANG: client-alive-attempts default "3"
+    MaxAuthTries        => 3,     # YANG: authentication-retries default "3"
 };
 
 my $keygen       = 1;
