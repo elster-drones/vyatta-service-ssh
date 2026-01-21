@@ -31,11 +31,11 @@ case $action in
     delete)
         if [[ "$VRFName" != "default" ]]; then
             rm -f /run/ssh/vrf/$VRFName/listen_addresses &> /dev/null
-            systemctl stop sshd@${VRFName}.service
+            systemctl stop --no-block sshd@${VRFName}.service 2>/dev/null || true
             rm -f /run/ssh/vrf/$VRFName/sshd_config &> /dev/null
         else
             rm -f /run/ssh/listen_addresses &> /dev/null
-            systemctl stop ssh &> /dev/null
+            systemctl stop --no-block ssh 2>/dev/null || true
             # stop sshd from automatically running at the next reboot
             touch /etc/ssh/sshd_not_to_be_run
         fi
@@ -59,15 +59,13 @@ case $action in
 
             echo "SSHD_CONF_FILE=-f /run/ssh/vrf/$VRFName/sshd_config" > /run/ssh/vrf/$VRFName/${VRFName}.env
             echo "VRFName=$VRFName" >> /run/ssh/vrf/$VRFName/${VRFName}.env
-            systemctl reload-or-restart sshd@${VRFName}.service
+            # Use --no-block to avoid deadlock during Vyatta commit
+            systemctl reload-or-restart --no-block sshd@${VRFName}.service 2>/dev/null || true
         else
             vyatta-update-ssh.pl --update=/etc/ssh/sshd_config
             # sshd can run, as update also removed /etc/ssh/sshd_not_to_be_run
-            systemctl reload-or-restart ssh &> /dev/null
-            if [ $? -ne 0 ]; then
-                echo "SSH service will listen on address if this is configured"
-                exit 0
-            fi
+            # Use --no-block to avoid deadlock during Vyatta commit
+            systemctl reload-or-restart --no-block ssh 2>/dev/null || true
         fi
     ;;
 esac
