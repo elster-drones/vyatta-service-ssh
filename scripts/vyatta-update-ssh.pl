@@ -21,10 +21,24 @@ use lib '/opt/vyatta/share/perl5';
 use File::Basename;
 use File::Slurp qw(write_file);
 use Vyatta::Config;
-use Vyatta::VrfManager qw(get_interface_vrf $VRFNAME_DEFAULT);
 use Template;
 use Getopt::Long;
 use Sys::Syslog qw(:standard :macros);
+
+# VrfManager is optional - systems without VRF support (e.g., live images)
+# will use default values
+our $VRFNAME_DEFAULT = 'default';
+my $has_vrfmanager = eval {
+    require Vyatta::VrfManager;
+    Vyatta::VrfManager->import(qw(get_interface_vrf $VRFNAME_DEFAULT));
+    1;
+};
+
+sub get_interface_vrf_safe {
+    my ($intf) = @_;
+    return $VRFNAME_DEFAULT unless $has_vrfmanager;
+    return Vyatta::VrfManager::get_interface_vrf($intf);
+}
 
 my $config = new Vyatta::Config;
 
@@ -147,7 +161,7 @@ sub check_listen_addrs {
     %pending_addrs = map { $_ => 1 } @$listen_addrs;
     foreach my $addr ( keys %pending_addrs ) {
         $intf = $addrs{$addr};
-        if ( $intf && $vrf_name eq get_interface_vrf($intf) ) {
+        if ( $intf && $vrf_name eq get_interface_vrf_safe($intf) ) {
             delete $pending_addrs{$addr};
         }
     }

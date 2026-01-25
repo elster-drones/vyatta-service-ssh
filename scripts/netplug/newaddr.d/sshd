@@ -10,7 +10,20 @@ use warnings;
 
 use lib "/opt/vyatta/share/perl5/";
 use File::Slurp qw(read_file write_file);
-use Vyatta::VrfManager qw(get_interface_vrf $VRFNAME_DEFAULT);
+
+# VrfManager is optional - systems without VRF support will use defaults
+our $VRFNAME_DEFAULT = 'default';
+my $has_vrfmanager = eval {
+    require Vyatta::VrfManager;
+    Vyatta::VrfManager->import(qw(get_interface_vrf $VRFNAME_DEFAULT));
+    1;
+};
+
+sub get_interface_vrf {
+    my ($intf) = @_;
+    return $VRFNAME_DEFAULT unless $has_vrfmanager;
+    return Vyatta::VrfManager::get_interface_vrf($intf);
+}
 
 my $BASE_NAME    = "listen_addresses";
 my $DEFAULT_FILE = "/run/ssh/listen_addresses";
