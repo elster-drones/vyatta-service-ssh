@@ -12,7 +12,6 @@ Depends: openssh-server,
  libpam-systemd,
  vyatta-cfg,
  vyatta-debian-ssh-server-config,
- ${vyatta:Depends},
  ${misc:Depends},
  ${perl:Depends}
 Breaks: vyatta-cfg-system (<< 1.6.0)
