@@ -3,6 +3,22 @@
 # This debian/rules uses debhelper.
 #
 
+# The scripts use Vyatta::VrfManager as in DANOS, and the package depends on
+# it. Ubuntu builds have no VRF kernel (linux-image-vrf), so there the module
+# is optional and the scripts fall back to the default VRF without it.
+ifeq ($(shell dpkg-vendor --derives-from Ubuntu && echo yes),yes)
+vyatta_depends =
+override_dh_install:
+	dh_install
+	patch -p1 -F0 --no-backup-if-mismatch -d debian/vyatta-service-ssh \
+		< debian/ubuntu/vrfmanager-optional.diff
+else
+vyatta_depends = libvyatta-vrfmanager-perl
+endif
+
+override_dh_gencontrol:
+	dh_gencontrol -- -V'vyatta:Depends=$(vyatta_depends)'
+
 override_dh_systemd_start:
 	dh_systemd_start --no-start \
 	    debian/sshd@.service
